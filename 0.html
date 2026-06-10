@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>أكاديمية مستر مصطفى دحروج المطورة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { cairo: ['Cairo', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; overflow: hidden; }
+        .app-container { width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; background: #f8fafc; }
+        .dark .app-container { background: #0f172a; }
+        
+        /* تأثير البطاقات الاحترافي */
+        .math-card {
+            background: white;
+            border: 4px solid #e2e8f0;
+            border-radius: 30px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .math-card:hover { transform: scale(1.05); border-color: #6366f1; }
+        .dark .math-card { background: #1e293b; border-color: #334155; }
+
+        /* شريط التقدم */
+        .progress-bar { height: 12px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #9333ea); transition: width 0.5s ease; }
+
+        @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .animate-pulse-soft { animation: pulse-soft 2s infinite; }
+    </style>
+</head>
+<body class="bg-slate-200 dark:bg-slate-950 flex justify-center">
+
+<div class="app-container shadow-2xl relative">
+    <div class="p-4 flex flex-col gap-3 bg-white dark:bg-slate-900 shadow-sm">
+        <div class="flex justify-between items-center">
+            <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xl">🌓</button>
+            <div class="text-center">
+                <h1 class="font-black text-indigo-600 dark:text-indigo-400">أكاديمية مستر مصطفى 🎓</h1>
+                <div class="flex items-center justify-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">المستوى:</span>
+                    <span id="level-tag" class="text-xs font-black px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full">مبتدئ 🌱</span>
+                </div>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="text-2xl">⭐</span>
+                <span id="score-val" class="font-black text-slate-700 dark:text-white">0</span>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div id="progress" class="progress-fill" style="width: 10%;"></div>
+        </div>
+    </div>
+
+    <div id="game-area" class="flex-1 p-6 overflow-y-auto flex flex-col items-center justify-center space-y-8">
+        </div>
+
+    <div class="grid grid-cols-3 bg-white dark:bg-slate-900 p-4 border-t dark:border-slate-800 gap-4">
+        <button onclick="switchTab('pv')" id="t-pv" class="flex flex-col items-center p-2 rounded-2xl transition-all">
+            <span class="text-2xl">🔢</span>
+            <span class="text-xs font-black mt-1 dark:text-slate-400">القيمة</span>
+        </button>
+        <button onclick="switchTab('comp')" id="t-comp" class="flex flex-col items-center p-2 rounded-2xl opacity-40 transition-all">
+            <span class="text-2xl">⚖️</span>
+            <span class="text-xs font-black mt-1 dark:text-slate-400">المقارنة</span>
+        </button>
+        <button onclick="switchTab('ord')" id="t-ord" class="flex flex-col items-center p-2 rounded-2xl opacity-40 transition-all">
+            <span class="text-2xl">📈</span>
+            <span class="text-xs font-black mt-1 dark:text-slate-400">الترتيب</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    let state = {
+        score: 0,
+        mode: 'pv',
+        level: 1,
+        consecutive: 0
+    };
+
+    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+
+    function switchTab(m) {
+        state.mode = m;
+        document.querySelectorAll('[id^="t-"]').forEach(btn => btn.classList.add('opacity-40'));
+        document.getElementById('t-' + m).classList.remove('opacity-40');
+        render();
+    }
+
+    function updateProgress() {
+        const p = (state.consecutive % 5) * 20;
+        document.getElementById('progress').style.width = `${p}%`;
+        document.getElementById('score-val').innerText = state.score;
+        
+        // تغيير مسمى المستوى بناءً على النقاط
+        const tags = ["مبتدئ 🌱", "ذكي 💡", "عبقري 🔥", "بطل الأكاديمية 👑"];
+        const levelIdx = Math.min(Math.floor(state.score / 50), 3);
+        document.getElementById('level-tag').innerText = tags[levelIdx];
+    }
+
+    function feedback(isCorrect) {
+        if(isCorrect) {
+            state.score += 10;
+            state.consecutive++;
+            confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
+        } else {
+            state.consecutive = 0;
+        }
+        updateProgress();
+        
+        // تأثير اهتزاز أو نجاح سريع قبل الانتقال
+        const area = document.getElementById('game-area');
+        area.classList.add('animate__animated', isCorrect ? 'animate__pulse' : 'animate__shakeX');
+        setTimeout(() => {
+            area.classList.remove('animate__animated', 'animate__pulse', 'animate__shakeX');
+            render();
+        }, 1000);
+    }
+
+    function render() {
+        const area = document.getElementById('game-area');
+        area.innerHTML = '';
+        
+        if(state.mode === 'pv') renderValue(area);
+        if(state.mode === 'comp') renderComparison(area);
+        if(state.mode === 'ord') renderOrdering(area);
+    }
+
+    function renderValue(area) {
+        const num = Math.floor(Math.random() * 900) + 100;
+        const digits = num.toString().split('');
+        const targetIdx = Math.floor(Math.random() * 3);
+        const places = ["المئات", "العشرات", "الآحاد"];
+        const correctValue = parseInt(digits[targetIdx]) * Math.pow(10, 2 - targetIdx);
+
+        area.innerHTML = `
+            <div class="animate__animated animate__fadeInDown text-center space-y-6 w-full">
+                <div class="text-8xl font-black text-indigo-600 drop-shadow-lg tracking-widest">${num}</div>
+                <div class="math-card p-6 shadow-xl">
+                    <p class="text-xl font-bold text-slate-600 dark:text-slate-300">ما قيمة الرقم <span class="text-3xl text-red-500 font-black">${digits[targetIdx]}</span> ؟</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4" id="options"></div>
+            </div>
+        `;
+
+        let opts = [correctValue, correctValue/10, correctValue*10 || 5].filter(v => v >= 0);
+        while(opts.length < 4) opts.push(Math.floor(Math.random() * 9) * 10);
+        
+        opts.sort(() => Math.random() - 0.5).forEach(o => {
+            const btn = document.createElement('button');
+            btn.className = "math-card p-4 text-2xl font-black text-slate-700 dark:text-white shadow-md active:bg-indigo-50";
+            btn.innerText = o;
+            btn.onclick = () => feedback(o === correctValue);
+            document.getElementById('options').appendChild(btn);
+        });
+    }
+
+    function renderComparison(area) {
+        const n1 = Math.floor(Math.random() * 100);
+        const n2 = Math.floor(Math.random() * 100);
+        const correct = n1 > n2 ? '>' : (n1 < n2 ? '<' : '=');
+
+        area.innerHTML = `
+            <div class="animate__animated animate__zoomIn flex flex-col items-center gap-12 w-full">
+                <div class="flex justify-between items-center w-full gap-4">
+                    <div class="math-card flex-1 p-8 text-5xl font-black text-center shadow-lg">${n1}</div>
+                    <div class="text-4xl text-orange-500 font-black animate-pulse-soft">؟</div>
+                    <div class="math-card flex-1 p-8 text-5xl font-black text-center shadow-lg">${n2}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 w-full">
+                    ${['>', '=', '<'].map(op => `
+                        <button onclick="feedback('${op}' === '${correct}')" 
+                                class="math-card p-6 text-4xl font-black text-indigo-600 shadow-xl">
+                            ${op}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderOrdering(area) {
+        let nums = Array.from({length: 3}, () => Math.floor(Math.random() * 100));
+        let sorted = [...nums].sort((a,b) => a - b);
+        let userSelection = [];
+
+        area.innerHTML = `
+            <div class="animate__animated animate__fadeInUp text-center space-y-8 w-full">
+                <h3 class="text-2xl font-black text-slate-700 dark:text-white">رتب الأرقام تصاعدياً 🚀</h3>
+                <div class="flex justify-center gap-4" id="pool"></div>
+                <div class="h-24 bg-slate-100 dark:bg-slate-800 rounded-3xl border-4 border-dashed border-indigo-300 flex items-center justify-center gap-4 p-4" id="target">
+                    <span class="text-slate-400 font-bold">ضع الأرقام هنا بالترتيب...</span>
+                </div>
+            </div>
+        `;
+
+        nums.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = "math-card px-6 py-4 text-2xl font-black shadow-lg bg-white";
+            btn.innerText = n;
+            btn.onclick = () => {
+                if(btn.style.opacity === '0.2') return;
+                btn.style.opacity = '0.2';
+                userSelection.push(n);
+                
+                const target = document.getElementById('target');
+                if(userSelection.length === 1) target.innerHTML = '';
+                target.innerHTML += `<div class="math-card p-3 text-xl font-black animate__animated animate__bounceIn bg-indigo-500 text-white border-none">${n}</div>`;
+                
+                if(userSelection.length === 3) {
+                    setTimeout(() => feedback(JSON.stringify(userSelection) === JSON.stringify(sorted)), 500);
+                }
+            };
+            document.getElementById('pool').appendChild(btn);
+        });
+    }
+
+    window.onload = render;
+</script>
+</body>
+</html>
